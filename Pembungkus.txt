@@ -1,0 +1,16 @@
+pkB_sig, pkB_enc = CA.verify_certificate(cert_B, expected_id=idB)   # ABORT
+K_f   = random_bytes(32)
+aad_f = encode("file-v1", file_id, ver, idA, idB)
+N_f   = random_bytes(12)
+C     = AES256_GCM.encrypt(K_f, N_f, file, aad=aad_f)
+ 
+e, e_pub = X25519.generate()
+wk    = HKDF_SHA256(X25519.exchange(e, pkB_enc),
+                    salt=e_pub||pkB_enc, info="file-v1/wrap"||aad_f, length=32)
+N_w   = random_bytes(12)
+W     = N_w || AES256_GCM.encrypt(wk, N_w, K_f, aad=aad_f)
+ 
+M     = encode("file-v1", file_id, ver, idA, idB, SHA256(C), N_f, e_pub, W)
+Sig_A = Ed25519.sign(skA_sig, "file-sig" || M)
+upload(cloud, C, M, Sig_A, cert_A)
+delete(e); delete(K_f); delete(wk)
