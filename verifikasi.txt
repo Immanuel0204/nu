@@ -1,0 +1,11 @@
+pkA_sig, _ = CA.verify_certificate(cert_A, expected_id=idA)         # ABORT
+assert Ed25519.verify(pkA_sig, Sig_A, "file-sig" || M)             # ABORT
+assert M.idB == idB and M.ver > last_ver[M.file_id]   # salah alamat / rollback
+assert SHA256(C) == M.hash                            # file diganti
+ 
+aad_f = encode("file-v1", M.file_id, M.ver, M.idA, M.idB)
+wk    = HKDF_SHA256(X25519.exchange(skB_enc, M.e_pub),
+                    salt=M.e_pub||pkB_enc, info="file-v1/wrap"||aad_f, length=32)
+K_f   = AES256_GCM.decrypt(wk, M.W.nonce, M.W.ct, aad=aad_f)   # tag salah
+file  = AES256_GCM.decrypt(K_f, M.N_f, C, aad=aad_f)           # tag salah
+last_ver[M.file_id] = M.ver   # dicatat HANYA setelah semua verifikasi lolos
