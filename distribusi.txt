@@ -1,0 +1,13 @@
+# Dijalankan oleh setiap pengguna X (Alice atau Bob) satu kali
+skX_sig, pkX_sig = Ed25519.generate()      # kunci tanda tangan
+skX_enc, pkX_enc = X25519.generate()       # kunci penerima file
+store_in_keystore(skX_sig, skX_enc)        # kunci privat tidak pernah dikirim
+ 
+csr    = encode(idX, pkX_sig, pkX_enc)
+proof  = Ed25519.sign(skX_sig, csr)         # bukti memiliki kunci privat
+cert_X = CA.issue_certificate(csr, proof)   # CA menandatangani identitas + kunci
+publish(directory, cert_X)                  # direktori ada di cloud (tidak dipercaya)
+ 
+# Verifikasi di luar jalur (cadangan): bandingkan fingerprint lewat kanal lain
+fingerprint = SHA256(pkX_sig || pkX_enc)
+# Rotasi: buat pasangan kunci baru berkala, terbitkan sertifikat baru, cabut yang lama
